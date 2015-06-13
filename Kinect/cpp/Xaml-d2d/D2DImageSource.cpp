@@ -26,9 +26,11 @@ D2DImageSource::D2DImageSource(
 
 void D2DImageSource::CreateDeviceResources()
 {
+    HRESULT hr = S_OK;
+
     UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #if defined(_DEBUG)
-    creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
+   // creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
     const D3D_FEATURE_LEVEL featureLevels[] =
@@ -42,7 +44,7 @@ void D2DImageSource::CreateDeviceResources()
         D3D_FEATURE_LEVEL_9_1,
     };
 
-    D3D11CreateDevice(
+    DX::ThrowIfFailed(D3D11CreateDevice(
         nullptr,
         D3D_DRIVER_TYPE_HARDWARE,
         nullptr,
@@ -52,20 +54,20 @@ void D2DImageSource::CreateDeviceResources()
         D3D11_SDK_VERSION,
         &m_d3dDevice,
         nullptr,
-        nullptr);
+        nullptr));
 
     ComPtr<IDXGIDevice> dxgiDevice;
-    m_d3dDevice.As(&dxgiDevice);
-    D2D1CreateDevice(
+    DX::ThrowIfFailed(m_d3dDevice.As(&dxgiDevice));
+    DX::ThrowIfFailed(D2D1CreateDevice(
         dxgiDevice.Get(),
         nullptr,
-        &m_d2dDevice);
+        &m_d2dDevice));
 
-    m_d2dDevice->CreateDeviceContext(
+    DX::ThrowIfFailed(m_d2dDevice->CreateDeviceContext(
         D2D1_DEVICE_CONTEXT_OPTIONS_NONE,
-        &m_d2dContext);
+        &m_d2dContext));
 
-    m_sisNative->SetDevice(dxgiDevice.Get());
+    DX::ThrowIfFailed(m_sisNative->SetDevice(dxgiDevice.Get()));
 
     DX::ThrowIfFailed(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, m_d2dFactory.GetAddressOf()));
     
@@ -99,10 +101,10 @@ void D2DImageSource::BeginDraw(Rect updateRect)
     }
 
     ComPtr<ID2D1Bitmap1> bitmap;
-    m_d2dContext->CreateBitmapFromDxgiSurface(
+    DX::ThrowIfFailed(m_d2dContext->CreateBitmapFromDxgiSurface(
         surface.Get(),
         nullptr,
-        &bitmap);
+        &bitmap));
 
     m_d2dContext->SetTarget(bitmap.Get());
 
@@ -125,9 +127,9 @@ void D2DImageSource::EndDraw()
 {
     m_d2dContext->SetTransform(D2D1::IdentityMatrix());
     m_d2dContext->PopAxisAlignedClip();
-    m_d2dContext->EndDraw();
+    DX::ThrowIfFailed(m_d2dContext->EndDraw());
     m_d2dContext->SetTarget(nullptr);
-    m_sisNative->EndDraw();
+    DX::ThrowIfFailed(m_sisNative->EndDraw());
 }
 
 void D2DImageSource::Clear(Windows::UI::Color color)
